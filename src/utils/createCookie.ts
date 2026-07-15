@@ -1,11 +1,30 @@
-export const getCookie = (name: string, value: string, expires: number): string => {
+const isProduction = process.env.NODE_ENV === 'production';
+
+type CookieOptions = {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'lax' | 'strict' | 'none';
+  maxAge?: number;
+};
+
+export const getCookieOptions = (maxAge: number): CookieOptions => ({
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'strict' : 'lax',
+  maxAge,
+});
+
+export const getCookie = (
+  name: string,
+  value: string,
+  expires: number,
+): string => {
   const currentDay = Date.now();
   const expiresDay = new Date(currentDay + expires);
   const expiresStr = expiresDay.toUTCString();
 
-  const part1 = `${name}=${value};`;
-  const part2 = `HttpOnly; Secure; SameSite=Strict;`;
-  const part3 = `Expires=${expiresStr};`;
+  const { httpOnly, secure, sameSite } = getCookieOptions(expires);
+  const secureFlag = secure ? 'Secure;' : '';
 
-  return part1 + part2 + part3;
+  return `${name}=${value}; ${httpOnly ? 'HttpOnly;' : ''} ${secureFlag} SameSite=${sameSite}; Expires=${expiresStr};`;
 };

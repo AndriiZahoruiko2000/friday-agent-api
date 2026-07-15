@@ -1,41 +1,50 @@
-import express from "express";
-import serverless from "serverless-http";
-import cors from "cors";
-import cookieParser from "cookie-parser";
+import express from 'express';
+import serverless from 'serverless-http';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
-import { initMongoDB } from "./database/initMongoDb.js";
-import { printRoutes } from "./helpers/printRoutes.js";
-import { errorHandler } from "./middlewares/errorHandler.js";
+import { initMongoDB } from './database/initMongoDb.js';
+import { printRoutes } from './helpers/printRoutes.js';
+import { errorHandler } from './middlewares/errorHandler.js';
 
-import router from "./routes/index.js";
-import { requestLogger } from "./middlewares/requestLogger.js";
-import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "./docs/swagger.js";
+import router from './routes/index.js';
+import { requestLogger } from './middlewares/requestLogger.js';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './docs/swagger.js';
 
 const app = express();
 
-app.use(express.json());
-app.use(cors());
+app.disable('x-powered-by');
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 
 app.use(initMongoDB);
 
 app.use(requestLogger);
 
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get("/docs.json", (_req, res) => {
-  res.setHeader("Content-Type", "application/json");
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/docs.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
 
 app.use(router);
+
+app.use((_req, res) => {
+  res.status(404).json({
+    status: 404,
+    message: 'Route not found',
+  });
+});
 
 app.use(errorHandler);
 
 printRoutes(app);
 export const handler = serverless(app);
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`🚀 Express server running on http://localhost:${PORT}`);

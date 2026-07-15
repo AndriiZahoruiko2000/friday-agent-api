@@ -1,6 +1,15 @@
-import { UserCollection, type User, type UserDocument } from "../database/models/user.js";
+import createHttpError from 'http-errors';
 
-export type CreateUserInput = Pick<User, "email" | "password" | "nickname" | "role">;
+import {
+  UserCollection,
+  type User,
+  type UserDocument,
+} from '../database/models/user.js';
+
+export type CreateUserInput = Pick<
+  User,
+  'email' | 'password' | 'nickname' | 'role'
+>;
 
 export const createUser = (userData: CreateUserInput) => {
   return UserCollection.create(userData);
@@ -14,7 +23,7 @@ export const getUserByEmail = async (email: string): Promise<UserDocument> => {
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw new Error("User not found");
+    throw createHttpError(401, 'Invalid email or password');
   }
 
   return user;
@@ -24,7 +33,7 @@ export const getUserById = async (id: string): Promise<UserDocument> => {
   const user = await UserCollection.findById(id);
 
   if (!user) {
-    throw new Error("User not found");
+    throw createHttpError(404, 'User not found');
   }
 
   return user;

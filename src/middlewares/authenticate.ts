@@ -42,10 +42,19 @@ export const authenticate: RequestHandler = async (req, _res, next) => {
       return next(createHttpError(401, 'Access token is missing'));
     }
 
-    const payload = jwt.verify(
-      token,
-      ACCESS_TOKEN_SECRET,
-    ) as AccessTokenPayload;
+    const payload = jwt.verify(token, ACCESS_TOKEN_SECRET as jwt.Secret, {
+      algorithms: ['HS256'],
+    }) as AccessTokenPayload;
+
+    if (
+      !payload.sub ||
+      typeof payload.sub !== 'string' ||
+      !payload.email ||
+      typeof payload.email !== 'string'
+    ) {
+      return next(createHttpError(401, 'Invalid access token'));
+    }
+
     const user = await getUserById(payload.sub);
 
     req.user = user;

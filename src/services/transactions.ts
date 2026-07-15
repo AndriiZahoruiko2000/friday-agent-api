@@ -1,0 +1,101 @@
+import { FilterQuery } from 'mongoose';
+import { UserDocument } from '../database/models/user.js';
+import {
+  Transactions,
+  TransactionsCollection,
+} from '../database/models/transactions.js';
+
+export interface TransactionParams {
+  amount?: number;
+  budgetId?: string;
+  transactionType?: string;
+  currency?: string;
+  category?: string;
+  tags?: string;
+  userId?: string;
+  note?: string;
+}
+
+export const getTransactionService = async (
+  params: TransactionParams,
+  user: UserDocument,
+) => {
+  const query: FilterQuery<Transactions> = {};
+  query.userId = user._id;
+
+  if (params.amount) {
+    query.amount = params.amount;
+  }
+
+  if (params.budgetId) {
+    query.budgetId = params.budgetId;
+  }
+
+  if (params.transactionType) {
+    query.transactionType = params.transactionType;
+  }
+
+  if (params.currency) {
+    query.currency = params.currency;
+  }
+
+  if (params.category) {
+    query.category = params.category;
+  }
+
+  if (params.tags) {
+    query.tags = params.tags;
+  }
+
+  if (params.userId) {
+    query.userId = params.userId;
+  }
+
+  if (params.note) {
+    query.note = params.note;
+  }
+
+  const result = TransactionsCollection.find(query);
+  return result;
+};
+
+export const getTransactionByIdService = async (transactionId: string) => {
+  const result = TransactionsCollection.findById(transactionId);
+  return result;
+};
+
+export const createTransactionService = async (
+  body: Transactions,
+  user: UserDocument,
+) => {
+  const transaction = { ...body, userId: user._id };
+
+  const result = await TransactionsCollection.create(transaction);
+  return result;
+};
+
+export const updateTransactionService = async (
+  transactionId: string,
+  body: Transactions,
+  userId: string,
+) => {
+  const result = await TransactionsCollection.findOneAndUpdate(
+    {
+      _id: transactionId,
+      userId,
+    },
+    body,
+  );
+  return result;
+};
+
+export const deleteTransactionService = async (
+  transactionId: string,
+  user: UserDocument,
+) => {
+  const result = TransactionsCollection.findOneAndDelete({
+    _id: transactionId,
+    userId: user._id,
+  });
+  return result;
+};
