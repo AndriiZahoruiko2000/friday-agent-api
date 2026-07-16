@@ -8,7 +8,11 @@ import {
   ACCESS_TOKEN_SECRET,
   ONE_MONTH,
 } from '../helpers/constants.js';
-import type { UserDocument } from '../database/models/user.js';
+import {
+  User,
+  UserCollection,
+  type UserDocument,
+} from '../database/models/user.js';
 import {
   createUser,
   findUserByEmail,
@@ -46,6 +50,14 @@ type SessionMeta = {
 
 const SALT_ROUNDS = 12;
 const REFRESH_TOKEN_VALIDITY = ONE_MONTH;
+
+interface GooglePayLoad {
+  email: string;
+  name: string;
+  picture: string;
+  given_name: string;
+  family_name: string;
+}
 
 const createAccessToken = (user: UserDocument) => {
   const options: jwt.SignOptions = {
@@ -166,4 +178,20 @@ export const refreshService = async (
 export const logoutService = async (refreshToken?: string) => {
   if (!refreshToken) return;
   await deleteSessionByToken(refreshToken);
+};
+
+export const googleAuth = async (jwtToken: string) => {
+  const payload = jwt.decode(jwtToken) as GooglePayLoad;
+  let user = await UserCollection.findOne({ email: payload.email });
+
+  if (!user) {
+    await registerUserService({
+      email: payload.email,
+      password: '',
+      nickname: payload.email,
+    });
+    user = await UserCollection.findOne({ email: payload.email });
+  }
+
+  return createSessionForUser(user as UserDocument, {});
 };

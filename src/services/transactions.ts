@@ -5,6 +5,8 @@ import {
   TransactionsCollection,
 } from '../database/models/transactions.js';
 import { BudgetCollection } from '../database/models/budget.js';
+import createHttpError from 'http-errors';
+import { convertCurrency } from '../helpers/countCurrency.js';
 
 export interface TransactionParams {
   amount?: number;
@@ -73,9 +75,17 @@ export const createTransactionService = async (
   const budget = await BudgetCollection.findById(body.budgetId);
 
   if (budget && body.transactionType === 'deposit') {
-    budget.balance += body.amount;
+    budget.balance += convertCurrency(
+      body.amount,
+      body.currency,
+      budget.currency,
+    );
   } else if (budget && body.transactionType === 'withdraw') {
-    budget.balance -= body.amount;
+    budget.balance -= convertCurrency(
+      body.amount,
+      body.currency,
+      budget.currency,
+    );
   }
 
   await budget?.save();
@@ -89,6 +99,47 @@ export const updateTransactionService = async (
   body: Transactions,
   userId: string,
 ) => {
+  const transaction = await TransactionsCollection.findOne({
+    _id: transactionId,
+    userId: userId,
+  });
+
+  if (!transaction) {
+    throw createHttpError(404, 'Transaction not found');
+  }
+
+  const budget = await BudgetCollection.findById(transaction.budgetId);
+
+  if (budget && transaction.transactionType === 'deposit') {
+    budget.balance -= convertCurrency(
+      transaction.amount,
+      transaction.currency,
+      budget.currency,
+    );
+  } else if (budget && transaction.transactionType === 'withdraw') {
+    budget.balance += convertCurrency(
+      transaction.amount,
+      transaction.currency,
+      budget.currency,
+    );
+  }
+
+  if (budget && body.transactionType === 'deposit') {
+    budget.balance += convertCurrency(
+      body.amount,
+      body.currency,
+      budget.currency,
+    );
+  } else if (budget && body.transactionType === 'withdraw') {
+    budget.balance -= convertCurrency(
+      body.amount,
+      body.currency,
+      budget.currency,
+    );
+  }
+
+  await budget?.save();
+
   const result = await TransactionsCollection.findOneAndUpdate(
     {
       _id: transactionId,
@@ -103,9 +154,33 @@ export const deleteTransactionService = async (
   transactionId: string,
   user: UserDocument,
 ) => {
-  const result = TransactionsCollection.findOneAndDelete({
+  const transaction = await TransactionsCollection.findOne({
     _id: transactionId,
     userId: user._id,
   });
-  return result;
+
+  if (!transaction) {
+    throw createHttpError(404, 'Transaction not found');
+  }
+
+  const budget = await BudgetCollection.findById(transaction.budgetId);
+
+  if (budget && transaction.transactionType === 'deposit') {
+    budget.balance -= convertCurrency(
+      transaction.amount,
+      transaction.currency,
+      budget.currency,
+    );
+  } else if (budget && transaction.transactionType === 'withdraw') {
+    budget.balance += convertCurrency(
+      transaction.amount,
+      transaction.currency,
+      budget.currency,
+    );
+  }
+
+  await budget?.save();
+  await transaction.deleteOne();
+
+  return transaction;
 };

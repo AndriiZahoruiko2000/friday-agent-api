@@ -105,3 +105,14 @@ export const refreshController: RequestHandler = async (req, res, next) => {
     next(err);
   }
 };
+
+export const googleAuthController: RequestHandler = async (req, res) => {
+  const { token } = req.body;
+  const tokens = await authServices.googleAuth(token);
+
+  res.cookie('refreshToken', tokens.refreshToken, getCookieOptions(ONE_MONTH));
+
+  res.cookie('accessToken', tokens.accessToken, getCookieOptions(ONE_DAY));
+
+  res.status(200).json({ accessToken: tokens.accessToken });
+};

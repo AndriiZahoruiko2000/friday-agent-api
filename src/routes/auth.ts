@@ -1,17 +1,19 @@
-import { Router } from "express";
-import * as authControllers from "../controllers/authController.js";
-import { authenticate } from "../middlewares/authenticate.js";
+import { Router } from 'express';
+import * as authControllers from '../controllers/authController.js';
+import { authenticate } from '../middlewares/authenticate.js';
 
 const router = Router();
 
-router.post("/register", authControllers.registerUserController);
+router.post('/register', authControllers.registerUserController);
 
-router.post("/login", authControllers.loginController);
+router.post('/login', authControllers.loginController);
 
-router.post("/logout", authControllers.logoutController);
+router.post('/google', authControllers.googleAuthController);
 
-router.post("/refresh", authControllers.refreshController);
+router.post('/logout', authControllers.logoutController);
 
-router.get("/me", authenticate, authControllers.getCurrentUserController);
+router.post('/refresh', authControllers.refreshController);
+
+router.get('/me', authenticate, authControllers.getCurrentUserController);
 
 export default router;
