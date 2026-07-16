@@ -4,6 +4,7 @@ import {
   Transactions,
   TransactionsCollection,
 } from '../database/models/transactions.js';
+import { BudgetCollection } from '../database/models/budget.js';
 
 export interface TransactionParams {
   amount?: number;
@@ -69,6 +70,15 @@ export const createTransactionService = async (
   user: UserDocument,
 ) => {
   const transaction = { ...body, userId: user._id };
+  const budget = await BudgetCollection.findById(body.budgetId);
+
+  if (budget && body.transactionType === 'deposit') {
+    budget.balance += body.amount;
+  } else if (budget && body.transactionType === 'withdraw') {
+    budget.balance -= body.amount;
+  }
+
+  await budget?.save();
 
   const result = await TransactionsCollection.create(transaction);
   return result;
