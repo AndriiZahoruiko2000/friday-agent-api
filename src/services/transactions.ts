@@ -142,6 +142,8 @@ export const updateTransactionService = async (
       body.currency,
       budget.currency,
     );
+
+    budget.balance = Number(budget.balance.toFixed(2));
   }
 
   await budget?.save();
@@ -171,6 +173,10 @@ export const deleteTransactionService = async (
 
   const budget = await BudgetCollection.findById(transaction.budgetId);
 
+  if (!budget) {
+    return;
+  }
+
   if (budget && transaction.transactionType === 'deposit') {
     budget.balance -= convertCurrency(
       transaction.amount,
@@ -184,6 +190,8 @@ export const deleteTransactionService = async (
       budget.currency,
     );
   }
+
+  budget.balance = Number(budget.balance.toFixed(2));
 
   await budget?.save();
   await transaction.deleteOne();
