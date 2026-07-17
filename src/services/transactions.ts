@@ -74,6 +74,10 @@ export const createTransactionService = async (
   const transaction = { ...body, userId: user._id };
   const budget = await BudgetCollection.findById(body.budgetId);
 
+  if (!budget) {
+    return;
+  }
+
   if (budget && body.transactionType === 'deposit') {
     budget.balance += convertCurrency(
       body.amount,
@@ -87,6 +91,8 @@ export const createTransactionService = async (
       budget.currency,
     );
   }
+
+  budget.balance = Number(budget.balance.toFixed(2));
 
   await budget?.save();
 
