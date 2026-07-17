@@ -116,3 +116,16 @@ export const googleAuthController: RequestHandler = async (req, res) => {
 
   res.status(200).json({ accessToken: tokens.accessToken });
 };
+
+export const forgotPasswordController: RequestHandler = async (req, res) => {
+  const email = req.body.email;
+
+  const response = await authServices.forgotPassword(email);
+  return res.status(200).json('Link was send to your email address');
+};
+
+export const confirmPasswordController: RequestHandler = async (req, res) => {
+  const { token, newPassword } = req.body;
+  const response = await authServices.confirmPassword(token, newPassword);
+  return res.status(200).json('Password was successfully changed!');
+};

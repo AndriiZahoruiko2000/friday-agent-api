@@ -10,6 +10,10 @@ router.post('/login', authControllers.loginController);
 
 router.post('/google', authControllers.googleAuthController);
 
+router.post('/reset-password', authControllers.forgotPasswordController);
+
+router.post('/confirm-password', authControllers.confirmPasswordController);
+
 router.post('/logout', authControllers.logoutController);
 
 router.post('/refresh', authControllers.refreshController);

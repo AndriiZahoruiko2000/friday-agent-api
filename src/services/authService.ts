@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import {
   ACCESS_TOKEN_EXPIRES_IN,
   ACCESS_TOKEN_SECRET,
+  JWT_SECRET,
   ONE_MONTH,
 } from '../helpers/constants.js';
 import {
@@ -25,6 +26,7 @@ import {
   getSessionByToken,
   rotateSession,
 } from './sessionService.js';
+import { sendEmail } from '../utils/mail.js';
 
 type RegisterPayload = {
   email: string;
@@ -194,4 +196,35 @@ export const googleAuth = async (jwtToken: string) => {
   }
 
   return createSessionForUser(user as UserDocument, {});
+};
+
+export const forgotPassword = async (email: string) => {
+  const user = await UserCollection.findOne({ email });
+
+  if (!user) {
+    return;
+  }
+
+  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '15m' });
+
+  const markup = `<a href="http://localhost:3000/auth/confirm-password?token=${token}">Reset Password</a>`;
+
+  await sendEmail({
+    from: 'zahoruiko.andrii17@gmail.com',
+    to: email,
+    subject: 'Reset Friday Password',
+    html: markup,
+  });
+};
+
+export const confirmPassword = async (token: string, newPassword: string) => {
+  const payload = jwt.verify(token, JWT_SECRET) as { id: string };
+  const userID = payload.id;
+
+  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+  const user = await UserCollection.findByIdAndUpdate(userID, {
+    password: hashedPassword,
+  });
+  return user;
 };
